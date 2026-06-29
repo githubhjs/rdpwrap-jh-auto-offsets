@@ -39,19 +39,19 @@ jobs:
         shell: pwsh
         run: |
           $v = "${{ steps.ver.outputs.version }}"
-          $raw = & ".\bin\RDPWrapOffsetFinder.exe" 2>&1 | Out-String
+          $lines = & ".\bin\RDPWrapOffsetFinder.exe" 2>&1
           Write-Host "--- RDPWrapOffsetFinder output ---"
-          Write-Host $raw
+          $lines | ForEach-Object { Write-Host $_ }
 
-          # Extract block starting with [version]
-          $pattern = "(?ms)(\[$([regex]::Escape($v))\][^\[]*)"
-          $m = [regex]::Match($raw, $pattern)
-          if (-not $m.Success) {
-            Write-Error "RDPWrapOffsetFinder did not produce output for $v"
+          # Filter to only key=value offset lines
+          $offsets = $lines | Where-Object { $_ -match "^\w+=\w+" }
+          if ($offsets.Count -eq 0) {
+            Write-Error "RDPWrapOffsetFinder produced no offset lines for $v"
             exit 1
           }
 
-          $block = $m.Value.TrimEnd()
+          # Build INI block with version header
+          $block = "[$v]`r`n" + ($offsets -join "`r`n")
 
           # Save to history/
           New-Item -ItemType Directory -Force -Path "history" | Out-Null
@@ -60,7 +60,7 @@ jobs:
           # Append to main rdpwrap.ini if not already present
           $existing = Get-Content "rdpwrap.ini" -Raw -ErrorAction SilentlyContinue
           if ($existing -notmatch [regex]::Escape("[$v]")) {
-            "`n$block" | Add-Content -Path "rdpwrap.ini" -Encoding utf8NoBOM
+            "`r`n$block" | Add-Content -Path "rdpwrap.ini" -Encoding utf8NoBOM
             Write-Host "Appended offsets for $v to rdpwrap.ini"
           }
 
