@@ -50,6 +50,14 @@ Abra PowerShell como **Administrador** y ejecute:
 irm https://raw.githubusercontent.com/githubhjs/rdpwrap-jh-auto-offsets/main/install.ps1 | iex
 ```
 
+### Desinstalar
+
+```powershell
+irm https://raw.githubusercontent.com/githubhjs/rdpwrap-jh-auto-offsets/main/uninstall.ps1 | iex
+```
+
+Este comando ejecutará el `uninstall.bat` propio de RDP Wrapper, eliminará el directorio de instalación y reiniciará Terminal Services. Windows volverá a su comportamiento predeterminado de sesión única.
+
 ### Actualizar offsets (tras una actualización de Windows)
 
 ```powershell

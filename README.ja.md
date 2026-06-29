@@ -50,6 +50,14 @@
 irm https://raw.githubusercontent.com/githubhjs/rdpwrap-jh-auto-offsets/main/install.ps1 | iex
 ```
 
+### アンインストール
+
+```powershell
+irm https://raw.githubusercontent.com/githubhjs/rdpwrap-jh-auto-offsets/main/uninstall.ps1 | iex
+```
+
+RDP Wrapper 付属の `uninstall.bat` を実行し、インストールディレクトリを削除して Terminal Services を再起動します。Windows はデフォルトの単一セッション RDP 動作に戻ります。
+
 ### オフセットの更新（Windows アップデート後）
 
 ```powershell

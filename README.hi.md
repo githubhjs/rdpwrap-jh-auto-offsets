@@ -50,6 +50,14 @@
 irm https://raw.githubusercontent.com/githubhjs/rdpwrap-jh-auto-offsets/main/install.ps1 | iex
 ```
 
+### अनइंस्टॉल करें
+
+```powershell
+irm https://raw.githubusercontent.com/githubhjs/rdpwrap-jh-auto-offsets/main/uninstall.ps1 | iex
+```
+
+यह कमांड RDP Wrapper का अपना `uninstall.bat` चलाएगा, इंस्टॉल डायरेक्टरी हटाएगा और Terminal Services को पुनः शुरू करेगा। Windows अपने डिफ़ॉल्ट एकल-सत्र RDP व्यवहार पर वापस आ जाएगा।
+
 ### ऑफसेट अपडेट करें (Windows अपडेट के बाद)
 
 ```powershell

@@ -50,6 +50,14 @@
 irm https://raw.githubusercontent.com/githubhjs/rdpwrap-jh-auto-offsets/main/install.ps1 | iex
 ```
 
+### Удаление
+
+```powershell
+irm https://raw.githubusercontent.com/githubhjs/rdpwrap-jh-auto-offsets/main/uninstall.ps1 | iex
+```
+
+Эта команда запустит собственный `uninstall.bat` RDP Wrapper, удалит директорию установки и перезапустит Terminal Services. Windows вернётся к стандартному поведению с одной RDP-сессией.
+
 ### Обновление офсетов (после обновления Windows)
 
 ```powershell

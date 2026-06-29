@@ -50,6 +50,14 @@
 irm https://raw.githubusercontent.com/githubhjs/rdpwrap-jh-auto-offsets/main/install.ps1 | iex
 ```
 
+### আনইনস্টল করুন
+
+```powershell
+irm https://raw.githubusercontent.com/githubhjs/rdpwrap-jh-auto-offsets/main/uninstall.ps1 | iex
+```
+
+এই কমান্ডটি RDP Wrapper-এর নিজস্ব `uninstall.bat` চালাবে, ইনস্টল ডিরেক্টরি মুছবে এবং Terminal Services পুনরায় চালু করবে। Windows তার ডিফল্ট একক-সেশন RDP আচরণে ফিরে যাবে।
+
 ### অফসেট আপডেট করুন (Windows আপডেটের পরে)
 
 ```powershell

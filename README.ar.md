@@ -50,6 +50,14 @@
 irm https://raw.githubusercontent.com/githubhjs/rdpwrap-jh-auto-offsets/main/install.ps1 | iex
 ```
 
+### إلغاء التثبيت
+
+```powershell
+irm https://raw.githubusercontent.com/githubhjs/rdpwrap-jh-auto-offsets/main/uninstall.ps1 | iex
+```
+
+سيُشغّل هذا الأمر ملف `uninstall.bat` الخاص بـ RDP Wrapper، ويحذف مجلد التثبيت، ويُعيد تشغيل Terminal Services. سيعود Windows إلى سلوك RDP الافتراضي بجلسة واحدة.
+
 ### تحديث الإزاحات (بعد تحديث Windows)
 
 ```powershell

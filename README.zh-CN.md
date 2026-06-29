@@ -61,6 +61,14 @@
 irm https://raw.githubusercontent.com/githubhjs/rdpwrap-jh-auto-offsets/main/install.ps1 | iex
 ```
 
+### 卸载
+
+```powershell
+irm https://raw.githubusercontent.com/githubhjs/rdpwrap-jh-auto-offsets/main/uninstall.ps1 | iex
+```
+
+此命令将运行 RDP Wrapper 内置的 `uninstall.bat`，删除安装目录，并重启 Terminal Services。Windows 将恢复默认的单会话 RDP 行为。
+
 ### 更新偏移量（Windows 更新后）
 
 ```powershell
