@@ -75,6 +75,10 @@ jobs:
             "commit_msg=auto: offsets for $($newSections -join ', ')" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           }
 
+      - name: Run offset tests
+        shell: pwsh
+        run: pwsh -File tests/Test-RdpWrapOffsets.ps1
+
       - name: Commit and push
         if: steps.update.outputs.new_count > 0
         shell: pwsh
