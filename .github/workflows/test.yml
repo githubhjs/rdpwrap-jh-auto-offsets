@@ -1,0 +1,41 @@
+name: Offset Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'rdpwrap.ini'
+      - 'history/**'
+      - 'tests/**'
+      - '.github/workflows/test.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run offset test suite
+    runs-on: self-hosted
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run offset tests
+        shell: pwsh
+        run: |
+          pwsh -File tests/Test-RdpWrapOffsets.ps1
+          if (Test-Path tests/last-report.txt) {
+            $report = Get-Content tests/last-report.txt -Raw
+            "## Offset Test Report`n``````" | Out-File $env:GITHUB_STEP_SUMMARY -Append
+            $report | Out-File $env:GITHUB_STEP_SUMMARY -Append
+            "``````" | Out-File $env:GITHUB_STEP_SUMMARY -Append
+          }
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: tests/last-report.txt
+          retention-days: 30
