@@ -37,14 +37,18 @@ jobs:
             if ($currentSection -and $currentLines.Count -gt 0) {
               $block = "[$currentSection]`r`n" + ($currentLines -join "`r`n")
               $histFile = "history/$currentSection.ini"
+              # Always write history snapshot (source of truth for what we've seen)
               if (-not (Test-Path $histFile)) {
                 $block | Out-File -FilePath $histFile -Encoding utf8NoBOM
                 Write-Host "Saved history: $histFile"
+                $script:newSections += $currentSection
+              } else {
+                Write-Host "History already exists: $histFile"
               }
+              # Append to rdpwrap.ini if missing
               if ($existing -notmatch [regex]::Escape("[$currentSection]")) {
                 "`r`n$block" | Add-Content -Path "rdpwrap.ini" -Encoding utf8NoBOM
                 Write-Host "Appended to rdpwrap.ini: [$currentSection]"
-                $script:newSections += $currentSection
               } else {
                 Write-Host "Already in rdpwrap.ini: [$currentSection]"
               }
