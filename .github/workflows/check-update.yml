@@ -1,0 +1,76 @@
+name: Check Windows Update & Generate Offsets
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # UTC 06:00 daily (Taiwan 14:00)
+  workflow_dispatch:
+
+jobs:
+  check-and-generate:
+    runs-on: self-hosted
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get termsrv.dll version
+        id: ver
+        shell: pwsh
+        run: |
+          $v = (Get-Item "$env:SystemRoot\System32\termsrv.dll").VersionInfo.FileVersion.Trim()
+          Write-Host "termsrv.dll version: $v"
+          "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Check if offsets already exist
+        id: check
+        shell: pwsh
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          if (Test-Path "history/$v.ini") {
+            Write-Host "Offsets for $v already exist, skipping."
+            "exists=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          } else {
+            Write-Host "New version detected: $v"
+            "exists=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          }
+
+      - name: Run RDPWrapOffsetFinder
+        if: steps.check.outputs.exists == 'false'
+        shell: pwsh
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          $raw = & ".\bin\RDPWrapOffsetFinder.exe" 2>&1 | Out-String
+          Write-Host "--- RDPWrapOffsetFinder output ---"
+          Write-Host $raw
+
+          # Extract block starting with [version]
+          $pattern = "(?ms)(\[$([regex]::Escape($v))\][^\[]*)"
+          $m = [regex]::Match($raw, $pattern)
+          if (-not $m.Success) {
+            Write-Error "RDPWrapOffsetFinder did not produce output for $v"
+            exit 1
+          }
+
+          $block = $m.Value.TrimEnd()
+
+          # Save to history/
+          New-Item -ItemType Directory -Force -Path "history" | Out-Null
+          $block | Out-File -FilePath "history/$v.ini" -Encoding utf8NoBOM
+
+          # Append to main rdpwrap.ini if not already present
+          $existing = Get-Content "rdpwrap.ini" -Raw -ErrorAction SilentlyContinue
+          if ($existing -notmatch [regex]::Escape("[$v]")) {
+            "`n$block" | Add-Content -Path "rdpwrap.ini" -Encoding utf8NoBOM
+            Write-Host "Appended offsets for $v to rdpwrap.ini"
+          }
+
+      - name: Commit and push
+        if: steps.check.outputs.exists == 'false'
+        shell: pwsh
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          git config user.name "rdpwrap-bot"
+          git config user.email "rdpwrap-bot@users.noreply.github.com"
+          git add rdpwrap.ini "history/$v.ini"
+          git commit -m "auto: offsets for Windows $v"
+          git push
