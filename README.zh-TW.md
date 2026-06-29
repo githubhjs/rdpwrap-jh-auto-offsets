@@ -77,6 +77,14 @@ irm https://raw.githubusercontent.com/githubhjs/rdpwrap-jh-auto-offsets/main/upd
 2. 從本儲存庫下載最新的 `rdpwrap.ini`
 3. 重新啟動終端機服務
 
+### 移除安裝
+
+```powershell
+irm https://raw.githubusercontent.com/githubhjs/rdpwrap-jh-auto-offsets/main/uninstall.ps1 | iex
+```
+
+此指令將執行 RDP Wrapper 內建的 `uninstall.bat`，移除安裝目錄，並重新啟動 Terminal Services。Windows 將恢復預設的單一 RDP 連線行為。
+
 ### 驗證安裝
 
 安裝完成後，開啟 `C:\Program Files\RDP Wrapper\RDPConf.exe`。應看到：

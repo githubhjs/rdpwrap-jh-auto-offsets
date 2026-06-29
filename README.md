@@ -75,6 +75,14 @@ This will:
 2. Download the latest `rdpwrap.ini` from this repository
 3. Restart Terminal Services
 
+### Uninstall
+
+```powershell
+irm https://raw.githubusercontent.com/githubhjs/rdpwrap-jh-auto-offsets/main/uninstall.ps1 | iex
+```
+
+This will run RDP Wrapper's own `uninstall.bat`, remove the install directory, and restart Terminal Services. Windows returns to its default single-session RDP behavior.
+
 ### Verify the installation
 
 After installing, open `RDPConf.exe` from `C:\Program Files\RDP Wrapper`. You should see:
