@@ -9,6 +9,8 @@ jobs:
   check-and-generate:
     runs-on: self-hosted
     timeout-minutes: 15
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -79,6 +81,7 @@ jobs:
         run: |
           git config user.name "rdpwrap-bot"
           git config user.email "rdpwrap-bot@users.noreply.github.com"
+          git remote set-url origin "https://githubhjs:${{ secrets.PUSH_TOKEN }}@github.com/githubhjs/rdpwrap-jh-auto-offsets.git"
           git add rdpwrap.ini history/
           git commit -m "${{ steps.update.outputs.commit_msg }}"
           git push
