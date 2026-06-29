@@ -13,81 +13,68 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Get termsrv.dll version
-        id: ver
+      - name: Run RDPWrapOffsetFinder and update offsets
+        id: update
         shell: pwsh
         run: |
-          # Extract numeric-only version, strip any trailing "(WinBuild...)" suffix
-          $raw = (Get-Item "$env:SystemRoot\System32\termsrv.dll").VersionInfo.FileVersion
-          $v = ($raw -split ' ')[0].Trim()
-          Write-Host "termsrv.dll version: $v"
-          "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-
-      - name: Check if offsets already exist
-        id: check
-        shell: pwsh
-        run: |
-          $v = "${{ steps.ver.outputs.version }}"
-          if (Test-Path "history/$v.ini") {
-            Write-Host "Offsets for $v already exist, skipping."
-            "exists=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          } else {
-            Write-Host "New version detected: $v"
-            "exists=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          }
-
-      - name: Run RDPWrapOffsetFinder
-        if: steps.check.outputs.exists == 'false'
-        shell: pwsh
-        run: |
-          $v = "${{ steps.ver.outputs.version }}"
           $lines = & ".\bin\RDPWrapOffsetFinder.exe" 2>&1
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "RDPWrapOffsetFinder failed with exit code $LASTEXITCODE"
+            exit 1
+          }
           Write-Host "--- RDPWrapOffsetFinder output ---"
           $lines | ForEach-Object { Write-Host $_ }
 
-          # Parse all [section] blocks from tool output
-          # Lines with [header] start a new section; key=value lines belong to current section
           New-Item -ItemType Directory -Force -Path "history" | Out-Null
           $existing = Get-Content "rdpwrap.ini" -Raw -ErrorAction SilentlyContinue
+          $newSections = @()
+
+          # Parse sections: collect lines per [header], save when next header or end reached
           $currentSection = $null
           $currentLines = @()
-          $appended = 0
 
-          foreach ($line in ($lines + @(""))) {
-            if ($line -match '^\[(.+)\]$') {
-              # Save previous section if it had content
-              if ($currentSection -and $currentLines.Count -gt 0) {
-                $block = "[$currentSection]`r`n" + ($currentLines -join "`r`n")
-                $histFile = "history/$currentSection.ini"
-                if (-not (Test-Path $histFile)) {
-                  $block | Out-File -FilePath $histFile -Encoding utf8NoBOM
-                }
-                if ($existing -notmatch [regex]::Escape("[$currentSection]")) {
-                  "`r`n$block" | Add-Content -Path "rdpwrap.ini" -Encoding utf8NoBOM
-                  Write-Host "Appended section [$currentSection]"
-                  $appended++
-                }
+          $saveSection = {
+            if ($currentSection -and $currentLines.Count -gt 0) {
+              $block = "[$currentSection]`r`n" + ($currentLines -join "`r`n")
+              $histFile = "history/$currentSection.ini"
+              if (-not (Test-Path $histFile)) {
+                $block | Out-File -FilePath $histFile -Encoding utf8NoBOM
+                Write-Host "Saved history: $histFile"
               }
-              $currentSection = $matches[1]
-              $currentLines = @()
-            } elseif ($line -match '^[^=]+=.+') {
-              $currentLines += $line
+              if ($existing -notmatch [regex]::Escape("[$currentSection]")) {
+                "`r`n$block" | Add-Content -Path "rdpwrap.ini" -Encoding utf8NoBOM
+                Write-Host "Appended to rdpwrap.ini: [$currentSection]"
+                $script:newSections += $currentSection
+              } else {
+                Write-Host "Already in rdpwrap.ini: [$currentSection]"
+              }
             }
           }
 
-          if ($appended -eq 0 -and -not (Test-Path "history/$v.ini")) {
-            Write-Error "RDPWrapOffsetFinder produced no usable output for $v"
-            exit 1
+          foreach ($line in $lines) {
+            if ($line -match '^\[(.+)\]$') {
+              & $saveSection
+              $currentSection = $Matches[1]
+              $currentLines = @()
+            } elseif ($line.Trim() -ne '' -and $line -match '=') {
+              $currentLines += $line
+            }
           }
-          Write-Host "Done. $appended section(s) added."
+          & $saveSection  # save last section
+
+          $count = $newSections.Count
+          Write-Host "New sections added: $count"
+          "new_count=$count" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          if ($count -gt 0) {
+            "commit_msg=auto: offsets for $($newSections -join ', ')" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          }
 
       - name: Commit and push
-        if: steps.check.outputs.exists == 'false'
+        if: steps.update.outputs.new_count > 0
         shell: pwsh
         run: |
-          $v = "${{ steps.ver.outputs.version }}"
           git config user.name "rdpwrap-bot"
           git config user.email "rdpwrap-bot@users.noreply.github.com"
           git add rdpwrap.ini history/
-          git commit -m "auto: offsets for Windows $v"
+          git commit -m "${{ steps.update.outputs.commit_msg }}"
           git push
